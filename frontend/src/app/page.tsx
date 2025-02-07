@@ -14,7 +14,7 @@ import Particles from "@/components/ui/particles";
 import { Separator } from "@/components/ui/separator";
 import { basePath } from "@/config/siteConfig";
 import { cn } from "@/lib/utils";
-import { ArrowRightIcon, ExternalLink } from "lucide-react";
+import { ArrowRightIcon, ExternalLink, FileJson, Server } from "lucide-react";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useEffect, useState } from "react";
