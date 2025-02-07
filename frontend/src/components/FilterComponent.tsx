@@ -34,19 +34,19 @@ const FilterComponent: React.FC<FilterProps> = ({ column, type, activeFilters, o
     setFilters((prevFilters) => {
       const updatedFilters = [...prevFilters];
       updatedFilters[index][key] = newValue;
-  
+
       if (key === "value" && type === "text") {
         handleAutocomplete(newValue as string);
       }
-  
+
       return updatedFilters;
     });
-  
+
     if (key === "value") {
       setTimeout(() => setShowSuggestions(false), 100); // Vorschläge ausblenden, sobald Wert gesetzt wird
     }
   };
-  
+
   const handleAutocomplete = (input: string) => {
     let filteredSuggestions: string[] = [];
 
@@ -119,12 +119,13 @@ const FilterComponent: React.FC<FilterProps> = ({ column, type, activeFilters, o
               <div className="relative flex items-center">
                 <input
                   type={type === "number" ? "number" : "text"}
-                  value={filter.value}
+                  value={filters[index].value}
                   onChange={(e) => updateFilter(index, "value", e.target.value)}
                   className="w-full mt-2 p-1 border rounded"
-                  onFocus={() => handleAutocomplete("")}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Delay hiding to allow clicking
+                  onFocus={() => handleAutocomplete("")}  // Zeige Vorschläge an
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} // Verhindert sofortiges Schließen
                 />
+
                 {type === "text" && (
                   <button
                     onClick={() => handleAutocomplete("")}

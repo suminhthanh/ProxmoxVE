@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ApplicationChart from "../../components/ApplicationChart";
 import FilterComponent from "../../components/FilterComponent";
+import { AlertCircle } from "lucide-react"; // Modernes Icon für Fehler
 
 interface DataModel {
   id: number;
@@ -45,6 +46,25 @@ const DataFetcher: React.FC = () => {
     setItemsPerPage((prev) => prev + 25);
   };
 
+  const handleShowError = (event: React.MouseEvent, errorMessage: string) => {
+    setErrorPopup({
+      open: true,
+      message: errorMessage,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+
+  const handleCloseError = () => {
+    setErrorPopup({ open: false, message: "", x: 0, y: 0 });
+  };
+  const [errorPopup, setErrorPopup] = useState<{ open: boolean; message: string; x: number; y: number }>({
+    open: false,
+    message: "",
+    x: 0,
+    y: 0,
+  });
+
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const year = date.getFullYear();
@@ -60,7 +80,7 @@ const DataFetcher: React.FC = () => {
     failed: filteredData.filter(item => item.status === "failed").length,
     unknown: filteredData.filter(item => !["installing", "done", "failed"].includes(item.status)).length,
   };
-  
+
 
   const toggleSort = (column: string) => {
     if (sortColumn === column) {
@@ -252,46 +272,42 @@ const DataFetcher: React.FC = () => {
       </div>
 
       <br></br>
-      {/* Status Legend */}
       <div className="mb-4 flex justify-between items-center">
         <p className="text-lg font">
           Status Legend: 🔄 installing {filteredCounts.installing} | ✔️ completed {filteredCounts.done} | ❌ failed {filteredCounts.failed} | ❓ unknown {filteredCounts.unknown}
         </p>
-        <br></br>
       </div>
-      <div className="max-w-screen-2xl mx-auto overflow-visible">
-        {/* Table */}
-        <table className="table-fixed border-collapse w-full">
+
+      <div className="max-w-screen-2xl mx-auto overflow-x-auto">
+        <table className="table-auto w-full border-collapse border border-gray-600">
           <thead>
-            <tr>
+            <tr className="bg-gray-800 text-white">
               {columns.map(({ key, type, label }) => (
-                <th key={key}>
-                  <div className="flex items-center space-x-1 flex-row-reverse">
-                    {sortColumn === key && renderSortIcon(key)}
-                    <span
-                      className="font-semibold cursor-pointer"
-                      onClick={() => toggleSort(key)}
-                    >
-                      {label}
-                    </span>
+                <th key={key} className="px-4 py-3 border border-gray-600 text-left whitespace-nowrap">
+                  <div className="flex items-center justify-start">
+                    {/* Filter-Icon links */}
                     {key !== "created_at" && (
-                      <FilterComponent
-                        column={key}
-                        type={type}
-                        activeFilters={filters[key] || []}
-                        onApplyFilter={applyFilters}
-                        onRemoveFilter={removeFilter}
-                        allData={data}
-                      />
+                      <div className="mr-2">
+                        <FilterComponent
+                          column={key}
+                          type={columns.find(col => col.key === key)?.type || "text"}
+                          activeFilters={filters[key] || []}
+                          onApplyFilter={applyFilters}
+                          onRemoveFilter={removeFilter}
+                          allData={data}
+                        />
+                      </div>
                     )}
+                    <span className="font-semibold cursor-pointer" onClick={() => toggleSort(key)}>
+                      {label} {sortColumn === key && renderSortIcon(key)}
+                    </span>
                   </div>
                 </th>
               ))}
             </tr>
-          </thead>
-          {/* Filters Row - Displays below headers */}
-          <thead>
-            <tr>
+
+            {/* Aktive Filter-Zeile */}
+            <tr className="bg-gray-700 text-white border-t border-gray-600">
               {columns.map(({ key }) => (
                 <th key={key} className="px-4 py-3 border-b text-left">
                   {filters[key] && filters[key].length > 0 ? (
@@ -308,80 +324,99 @@ const DataFetcher: React.FC = () => {
                       ))}
                     </div>
                   ) : (
-                    <span className="px-10 py-2 text-right text-gray-500">—</span>
+                    <span className="text-gray-500">—</span>
                   )}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+
+          <tbody className="bg-gray-900 text-white">
             {filteredData.length > 0 ? (
               filteredData.slice(0, itemsPerPage).map((item, index) => (
-                <tr key={index}>
-                  <td className="px-4 py-2 border-b text-center">
+                <tr key={index} className="border border-gray-700 hover:bg-gray-800 transition">
+                  {/* Status mit Icon */}
+                  <td className="px-4 py-2 text-center border border-gray-700">
                     <div className="relative group">
-                      {item.status === "done" ? (
-                        <span className="group-hover:tooltip">✔️</span>
-                      ) : item.status === "failed" ? (
-                        <span className="group-hover:tooltip">❌</span>
-                      ) : item.status === "installing" ? (
-                        <span className="group-hover:tooltip">🔄</span>
-                      ) : (
-                        <span>{item.status}</span>
-                      )}
-                      <span className="absolute hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded">
-                        {item.status}
-                      </span>
+                      {item.status === "done" ? "✔️" :
+                        item.status === "failed" ? "❌" :
+                          item.status === "installing" ? "🔄" : item.status}
                     </div>
                   </td>
 
-                  <td className="px-4 py-2 border-b text-center">
+                  {/* Type mit Icon */}
+                  <td className="px-4 py-2 text-center border border-gray-700">
                     <div className="relative group">
-                      {item.type === "lxc" ? (
-                        <span className="group-hover:tooltip">📦</span>
-                      ) : item.type === "vm" ? (
-                        <span className="group-hover:tooltip">🖥️</span>
-                      ) : (
-                        <span>{item.type}</span>
-                      )}
-                      <span className="absolute hidden group-hover:block bg-gray-900 text-white text-xs px-2 py-1 rounded -top-6 left-1/2 transform -translate-x-1/2">
-                        {item.type}
-                      </span>
+                      {item.type === "lxc" ? "📦" :
+                        item.type === "vm" ? "🖥️" : item.type}
                     </div>
                   </td>
 
+                  {/* Dynamische Spaltenbreiten */}
+                  <td className="px-4 py-3 border border-gray-700 max-w-[18%] truncate">{item.nsapp}</td>
+                  <td className="px-4 py-3 border border-gray-700 max-w-[14%] truncate">{item.os_type}</td>
 
+                  {/* Kleinere Spalten für HDD, Cores, RAM */}
+                  <td className="px-4 py-3 border border-gray-700 text-center w-[6%]">{item.disk_size}</td>
+                  <td className="px-4 py-3 border border-gray-700 text-center w-[6%]">{item.core_count}</td>
+                  <td className="px-4 py-3 border border-gray-700 text-center w-[6%]">{item.ram_size}</td>
 
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.nsapp}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.os_type}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.disk_size}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.core_count}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.ram_size}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.method}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.pve_version}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{item.error}</td>
-                  <td className="px-4 py-3 border-b overflow-hidden text-ellipsis">{formatDate(item.created_at)}</td>
+                  {/* Weitere Spalten mit Overflow-Fix */}
+                  <td className="px-4 py-3 border border-gray-700 max-w-[12%] truncate">{item.method}</td>
+                  <td className="px-4 py-3 border border-gray-700 max-w-[10%] truncate">{item.pve_version}</td>
+
+                  {/* Fehler mit Tooltip & Icon */}
+                  <td className="px-4 py-3 border border-gray-700 text-center relative">
+                    {item.error && item.error !== "none" ? (
+                      <button onClick={(e) => handleShowError(e, item.error)} className="text-yellow-500 hover:text-yellow-300">
+                        <AlertCircle size={20} />
+                      </button>
+                    ) : (
+                      <span className="text-gray-500">—</span>
+                    )}
+                  </td>
+
+                  {/* Created At mit Formatierung */}
+                  <td className="px-4 py-3 border border-gray-700 whitespace-nowrap">{formatDate(item.created_at)}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={columns.length} className="px-4 py-2 text-center text-gray-500">
+                <td colSpan={columns.length} className="px-4 py-3 text-center text-gray-500 border border-gray-700">
                   No results found
                 </td>
               </tr>
             )}
           </tbody>
         </table>
-        {itemsPerPage < filteredData.length && (
-          <div className="text-center mt-4">
-            <button onClick={handleLoadMore} className="px-4 py-2 bg-blue-500 text-white rounded">
-              Load more...
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Fehler-Popup jetzt direkt neben dem Icon */}
+      {errorPopup.open && (
+        <div
+          className="absolute bg-gray-900 text-white p-4 rounded shadow-lg z-50"
+          style={{ top: errorPopup.y, left: errorPopup.x + 30 }} // Popup erscheint direkt rechts vom Icon
+        >
+          <p className="text-sm">{errorPopup.message}</p>
+          <button
+            onClick={handleCloseError}
+            className="mt-2 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-700"
+          >
+            Close
+          </button>
+        </div>
+      )}
+
+      {/* Load More Button */}
+      {itemsPerPage < filteredData.length && (
+        <div className="text-center mt-4">
+          <button onClick={handleLoadMore} className="px-4 py-2 bg-blue-500 text-white rounded">
+            Load more...
+          </button>
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default DataFetcher;
