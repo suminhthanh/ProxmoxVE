@@ -34,15 +34,19 @@ const FilterComponent: React.FC<FilterProps> = ({ column, type, activeFilters, o
     setFilters((prevFilters) => {
       const updatedFilters = [...prevFilters];
       updatedFilters[index][key] = newValue;
-
+  
       if (key === "value" && type === "text") {
         handleAutocomplete(newValue as string);
       }
-
+  
       return updatedFilters;
     });
+  
+    if (key === "value") {
+      setTimeout(() => setShowSuggestions(false), 100); // Vorschläge ausblenden, sobald Wert gesetzt wird
+    }
   };
-
+  
   const handleAutocomplete = (input: string) => {
     let filteredSuggestions: string[] = [];
 
@@ -138,14 +142,16 @@ const FilterComponent: React.FC<FilterProps> = ({ column, type, activeFilters, o
                       key={i}
                       className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer"
                       onMouseDown={(e) => {
-                        e.preventDefault(); // Damit das Blur-Event das Schließen nicht überschreibt
+                        e.preventDefault(); // Verhindert, dass das Input-Feld sofort das Blur-Event auslöst
                         updateFilter(index, "value", suggestion);
-                        setSuggestions([]);
+                        setSuggestions([]); // Vorschläge ausblenden
                         setShowSuggestions(false);
                       }}
+                      onClick={() => setFilters([{ operator: filters[index].operator, value: suggestion }])} // Setzt den Wert im Input zurück
                     >
                       {suggestion}
                     </li>
+
                   ))}
                 </ul>
               )}
@@ -163,8 +169,8 @@ const FilterComponent: React.FC<FilterProps> = ({ column, type, activeFilters, o
             onClick={applyFilters}
             disabled={loading}
             className={`w-full p-2 rounded-md font-semibold mt-3 transition ${loading
-                ? "bg-blue-300 text-gray-700 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-600 text-white"
+              ? "bg-blue-300 text-gray-700 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600 text-white"
               }`}
           >
             {loading ? "Applying..." : "Apply"}
