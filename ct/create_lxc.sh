@@ -171,7 +171,7 @@ function select_storage() {
 }
 
 # Test if ID is in use
-if pct status $CTID &>/dev/null; then
+if qm status "$CTID" &>/dev/null || pct status "$CTID" &>/dev/null; then
   echo -e "ID '$CTID' is already in use."
   unset CTID
   msg_error "Cannot use ID that is already in use."
