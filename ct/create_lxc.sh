@@ -199,19 +199,30 @@ mapfile -t TEMPLATES < <(pveam available -section system | sed -n "s/.*\($TEMPLA
   exit 207
 }
 TEMPLATE="${TEMPLATES[-1]}"
-
 TEMPLATE_PATH="/var/lib/vz/template/cache/$TEMPLATE"
 # Check if template exists, if corrupt remove and redownload
-if ! pveam list "$TEMPLATE_STORAGE" | grep -q "$TEMPLATE"; then
+if ! pveam list "$TEMPLATE_STORAGE" | grep -q "$TEMPLATE" || ! tar -tzf "$TEMPLATE_PATH" >/dev/null 2>&1; then
+  msg_error "Template $TEMPLATE not found in storage or seems to be corrupted. Redownloading."
   [[ -f "$TEMPLATE_PATH" ]] && rm -f "$TEMPLATE_PATH"
-  msg_info "Downloading LXC Template"
-  pveam download "$TEMPLATE_STORAGE" "$TEMPLATE" >/dev/null ||
-    {
-      msg_error "A problem occurred while downloading the LXC template."
+
+  # Download mit 3 Versuchen
+  for attempt in {1..3}; do
+    msg_info "Attempt $attempt: Downloading LXC template..."
+
+    if timeout 120 pveam download "$TEMPLATE_STORAGE" "$TEMPLATE" >/dev/null; then
+      msg_ok "Template download successful."
+      break
+    fi
+
+    if [ $attempt -eq 3 ]; then
+      msg_error "Three failed attempts. Aborting."
       exit 208
-    }
-  msg_ok "Downloaded LXC Template"
+    fi
+
+    sleep $((attempt * 5))
+  done
 fi
+msg_ok "LXC Template is ready to use."
 
 # Check and fix subuid/subgid
 grep -q "root:100000:65536" /etc/subuid || echo "root:100000:65536" >>/etc/subuid
