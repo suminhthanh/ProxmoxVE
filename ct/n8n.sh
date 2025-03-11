@@ -6,12 +6,12 @@ source <(curl -s https://raw.githubusercontent.com/community-scripts/ProxmoxVE/m
 # Source: https://n8n.io/
 
 APP="n8n"
-var_tags="automation"
-var_cpu="2"
-var_ram="2048"
-var_disk="6"
-var_os="debian"
-var_version="12"
+var_tags="os"
+var_cpu="1"
+var_ram="1024"
+var_disk="8"
+var_os="ubuntu"
+var_version="24.10"
 var_unprivileged="1"
 
 header_info "$APP"
@@ -23,22 +23,6 @@ function update_script() {
   header_info
   check_container_storage
   check_container_resources
-  if [[ ! -f /etc/systemd/system/n8n.service ]]; then
-    msg_error "No ${APP} Installation Found!"
-    exit
-  fi
-  if [[ "$(node -v | cut -d 'v' -f 2)" == "18."* ]]; then
-    if ! command -v npm >/dev/null 2>&1; then
-      echo "Installing NPM..."
-      $STD apt-get install -y npm
-      echo "Installed NPM..."
-    fi
-  fi
-  msg_info "Updating ${APP} LXC"
-  $STD npm update -g n8n
-  systemctl restart n8n
-  msg_ok "Updated Successfully"
-  exit
 }
 
 start
